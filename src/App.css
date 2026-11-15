@@ -1,0 +1,414 @@
+/* ---------- Contenedor principal ---------- */
+.App {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 32px 28px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.App h2 {
+  margin: 0 0 4px;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-h);
+}
+
+.App h3 {
+  margin: 20px 0 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* ---------- Cabecera de turno ---------- */
+.header {
+  margin: 12px 0 22px;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.vs {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  opacity: 0.5;
+}
+
+.player-card {
+  --c: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  background: var(--cell);
+  border: 2px solid transparent;
+  opacity: 0.55;
+  transform: scale(0.94);
+  transition: opacity 0.3s, transform 0.3s, border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+
+.player-card.x { --c: var(--x); }
+.player-card.o { --c: var(--o); }
+
+.player-name {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.player-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--c);
+}
+
+/* Jugador con el turno: se agranda, brilla y late */
+.player-card.active {
+  opacity: 1;
+  transform: scale(1.05);
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, var(--cell));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent),
+              0 10px 24px -8px var(--c);
+  animation: card-pulse 1.6s ease-in-out infinite;
+}
+
+.player-card.won {
+  opacity: 1;
+  transform: scale(1.08);
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 18%, var(--cell));
+  box-shadow: 0 10px 28px -8px var(--c);
+}
+
+.banner {
+  --c: var(--text-h);
+  margin-top: 14px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--c);
+  box-shadow: 0 10px 24px -10px var(--c);
+  animation: banner-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+.banner.turn-x { --c: var(--x); }
+.banner.turn-o { --c: var(--o); }
+.banner.draw   { --c: #8b7fb0; }
+
+/* Mini fichas (se reutilizan en las tarjetas y en la pantalla final) */
+.mini {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+}
+
+.mini.big {
+  width: 72px;
+  height: 72px;
+}
+
+.mini-x::before,
+.mini-x::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 90%;
+  height: 16%;
+  border-radius: 99px;
+  background: var(--x);
+}
+.mini-x::before { transform: rotate(45deg); }
+.mini-x::after  { transform: rotate(-45deg); }
+
+.mini-o::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 5px solid var(--o);
+}
+.mini.big.mini-o::before { border-width: 10px; }
+
+@keyframes card-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent), 0 10px 24px -8px var(--c); }
+  50%      { box-shadow: 0 0 0 9px color-mix(in srgb, var(--c) 6%, transparent),  0 10px 28px -6px var(--c); }
+}
+
+@keyframes banner-in {
+  from { transform: translateY(-8px) scale(0.92); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* ---------- Tablero ---------- */
+.board {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 330px);
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--border);
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* ---------- Casillas ---------- */
+.square {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  background: var(--cell);
+  font-size: 0; /* ocultamos el texto: la ficha se dibuja con CSS */
+  transition: background 0.2s, transform 0.15s;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background: var(--cell-hover);
+  transform: translateY(-2px);
+}
+
+.no_clickable {
+  cursor: not-allowed;
+}
+
+/* Base común de las piezas (pseudo-elementos) */
+.square::before,
+.square::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
+}
+
+/* ---------- Ficha X: dos barras cruzadas ---------- */
+.square.x::before,
+.square.x::after {
+  width: 62%;
+  height: 12%;
+  border-radius: 99px;
+  background: var(--x);
+  box-shadow: 0 4px 14px -4px var(--x);
+}
+
+.square.x::before {
+  animation: pop-x1 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.square.x::after {
+  animation: pop-x2 0.3s 0.08s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+/* ---------- Ficha O: un anillo ---------- */
+.square.o::before {
+  width: 56%;
+  height: 56%;
+  border-radius: 50%;
+  border: 11px solid var(--o);
+  box-shadow: 0 4px 14px -4px var(--o), inset 0 4px 14px -6px var(--o);
+  animation: pop-o 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+/* ---------- Vista previa de la ficha del turno al pasar el ratón ---------- */
+.board.next-x .square.clickable:hover::before,
+.board.next-x .square.clickable:hover::after {
+  width: 62%;
+  height: 12%;
+  border-radius: 99px;
+  background: var(--x);
+  opacity: 0.25;
+}
+.board.next-x .square.clickable:hover::before { transform: rotate(45deg); }
+.board.next-x .square.clickable:hover::after  { transform: rotate(-45deg); }
+
+.board.next-o .square.clickable:hover::before {
+  width: 56%;
+  height: 56%;
+  border-radius: 50%;
+  border: 11px solid var(--o);
+  opacity: 0.25;
+}
+
+/* ---------- Animaciones ---------- */
+@keyframes pop-x1 {
+  from { transform: rotate(45deg) scale(0); }
+  to   { transform: rotate(45deg) scale(1); }
+}
+
+@keyframes pop-x2 {
+  from { transform: rotate(-45deg) scale(0); }
+  to   { transform: rotate(-45deg) scale(1); }
+}
+
+@keyframes pop-o {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .square::before,
+  .square::after {
+    animation-duration: 0.01s !important;
+  }
+}
+
+/* ---------- Botón reset ---------- */
+.reset {
+  padding: 10px 28px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--x), var(--o));
+  box-shadow: 0 8px 20px -8px var(--o);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.reset:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px var(--o);
+}
+
+.reset:active {
+  transform: translateY(0);
+}
+
+/* ---------- Casillas ganadoras ---------- */
+.square.win {
+  background: color-mix(in srgb, var(--win, var(--text)) 16%, var(--cell));
+  animation: win-pulse 0.9s ease-in-out infinite;
+}
+.square.win.x { --win: var(--x); }
+.square.win.o { --win: var(--o); }
+
+.board.finished .square:not(.win) {
+  opacity: 0.55;
+}
+
+@keyframes win-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+
+/* ---------- Botón secundario ---------- */
+.ghost {
+  padding: 10px 22px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-h);
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.ghost:hover {
+  background: var(--cell);
+  transform: translateY(-2px);
+}
+
+/* ---------- Pantalla final ---------- */
+.end-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 10, 35, 0.55);
+  backdrop-filter: blur(6px);
+  /* Espera 0.9 s para que se vea la línea ganadora antes de mostrarse */
+  animation: overlay-in 0.4s 0.9s ease both;
+}
+
+.end-card {
+  --c: #8b7fb0;
+  width: min(100%, 360px);
+  padding: 32px 26px 26px;
+  text-align: center;
+  background: var(--panel);
+  border-radius: 28px;
+  border-top: 6px solid var(--c);
+  box-shadow: var(--shadow), 0 0 60px -20px var(--c);
+  animation: card-in 0.5s 0.9s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.end-card.end-x { --c: var(--x); }
+.end-card.end-o { --c: var(--o); }
+
+.end-pieces {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.end-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--c);
+}
+
+.end-card .end-title {
+  margin: 6px 0 8px;
+  font-size: 2.2rem;
+}
+
+.end-sub {
+  margin: 0 0 22px;
+  line-height: 1.4;
+}
+
+.end-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes card-in {
+  from { transform: translateY(24px) scale(0.9); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-card.active,
+  .square.win {
+    animation: none;
+  }
+}
